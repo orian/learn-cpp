@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 project(learn_cpp)
 
+set(CMAKE_CXX_FLAGS_RELEASE  "-O3 -Wall -Wextra -g0 -march=native -mtune=native")
+
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(learn_cpp main.cpp)

@@ -1,5 +1,9 @@
 #include <iostream>
 #include <random>
+#include <ctime>
+#include <chrono>
+#include "libdivide.h"
+#include "fastmod.h"
 
 int f() {
     static int i;
@@ -11,7 +15,7 @@ int main() {
 
     std::cout << mt_rand() << std::endl;
 
-    constexpr auto n = 500000000;
+    constexpr auto n = 100000000;
     constexpr auto divisor_val = 1398269; // mersenne prime num
     std::vector<int> dividend(n), divisor(n, divisor_val), result(n);
     std::generate(dividend.begin(), dividend.end(), f);
@@ -27,12 +31,12 @@ int main() {
                   << sum << " took " << ms.count() << " ms\n";
     };
 
-    eval([&dividend, &divisor, &result] {
-        for (size_t i = 0; i < n; ++i) {
-            result[i] = dividend[i] % divisor[i];
-        }
-        return std::pair{"built in /", result};
-    });
+//    eval([&dividend, &divisor, &result] {
+//        for (size_t i = 0; i < n; ++i) {
+//            result[i] = dividend[i] % divisor[i];
+//        }
+//        return std::pair{"built in /", result};
+//    });
     eval([&dividend, &divisor, &result] {
         for (size_t i = 0; i < n; ++i) {
             result[i] = dividend[i] % divisor[i];
@@ -81,7 +85,17 @@ int main() {
         }
         return std::pair{"built in % const with raw pointer", result};
     });
+    eval([&dividend, &result] {
+        auto d = dividend.data();
+        auto r = result.data();
 
+        uint64_t M = fastmod::computeM_u32(divisor_val);
+        libdivide::divider<int> divider(divisor_val);
+        for (size_t i = n; i; --i) {
+            *(r++) = fastmod::fastmod_s32(*(d++), M, divisor_val);
+        }
+        return std::pair{"fastmod", result};
+    });
 
     std::cout << std::reduce(result.cbegin(), result.cend()) << std::endl;
 }
