@@ -10,16 +10,14 @@ int f() {
     return ++i;
 }
 
-int main() {
-    std::mt19937 mt_rand(std::time(0));
+int rnd() {
+    static std::mt19937 mt_rand(std::time(0));
+    return mt_rand();
+}
 
-    std::cout << mt_rand() << std::endl;
-
-    constexpr auto n = 100000000;
-    constexpr auto divisor_val = 1398269; // mersenne prime num
+void runBenchmarks(const size_t n, const int divisor_val) {
     std::vector<int> dividend(n), divisor(n, divisor_val), result(n);
-    std::generate(dividend.begin(), dividend.end(), f);
-//    std::generate(divisor.begin(), divisor.end(), f);
+    std::generate(dividend.begin(), dividend.end(), rnd);
 
     auto eval = [](auto fun) {
         const auto t1 = std::chrono::high_resolution_clock::now();
@@ -37,13 +35,13 @@ int main() {
 //        }
 //        return std::pair{"built in /", result};
 //    });
-    eval([&dividend, &divisor, &result] {
+    eval([n, &dividend, &divisor, &result] {
         for (size_t i = 0; i < n; ++i) {
             result[i] = dividend[i] % divisor[i];
         }
-        return std::pair{"built in %", result};
+        return std::pair{"3[] built in %", result};
     });
-    eval([&dividend, &divisor, &result] {
+    eval([n, &dividend, &divisor, &result] {
         auto a = dividend.data();
         auto b = divisor.data();
         auto c = result.data();
@@ -51,41 +49,41 @@ int main() {
         for (size_t i = 0; i < n; ++i) {
             *(c++) = *(a++) % *(b++);
         }
-        return std::pair{"built in % pointers for data", result};
+        return std::pair{"3[] built in % pointers for data", result};
     });
-    eval([&dividend, &result] {
+    eval([n, &dividend, &result, divisor_val] {
         for (size_t i = 0; i < n; ++i) {
             result[i] = dividend[i] % divisor_val;
         }
-        return std::pair{"built in % const", result};
+        return std::pair{"2[] built in % const", result};
     });
-    eval([&dividend, &result] {
+    eval([n, &dividend, &result, divisor_val] {
         auto r = result.begin();
         auto begin = dividend.cbegin();
         for (size_t i = n; i; --i) {
             *(r++) = *(begin++) % divisor_val;
         }
-        return std::pair{"built in % const iter", result};
+        return std::pair{"2[] built in % const iter", result};
     });
-    eval([&dividend, &result] {
+    eval([n, &dividend, &result, divisor_val] {
         auto d = dividend.data();
         auto r = result.data();
 
         for (size_t i = n; i; --i) {
             *(r++) = *(d++) % divisor_val;
         }
-        return std::pair{"built in % const with raw pointer", result};
+        return std::pair{"2[] built in % const with raw pointer", result};
     });
-    eval([&dividend, &result] {
+    eval([n, &dividend, &result, divisor_val] {
         auto d = dividend.data();
         auto r = result.data();
 
         for (size_t i = n; i; --i) {
             *(r++) = *d >= divisor_val ? *(d++) % divisor_val : *(d++);
         }
-        return std::pair{"built in % const with raw pointer", result};
+        return std::pair{"2[] built in % const with raw pointer with IF", result};
     });
-    eval([&dividend, &result] {
+    eval([n, &dividend, &result, divisor_val] {
         auto d = dividend.data();
         auto r = result.data();
 
@@ -94,8 +92,33 @@ int main() {
         for (size_t i = n; i; --i) {
             *(r++) = fastmod::fastmod_s32(*(d++), M, divisor_val);
         }
-        return std::pair{"fastmod", result};
+        return std::pair{"2[] fastmod", result};
+    });
+
+    result = dividend;
+    eval([n, &result, divisor_val] {
+        auto r = result.data();
+
+        uint64_t M = fastmod::computeM_u32(divisor_val);
+        libdivide::divider<int> divider(divisor_val);
+        for (size_t i = n; i; --i) {
+            *(r++) = fastmod::fastmod_s32(*r, M, divisor_val);
+        }
+        return std::pair{"1[] fastmod", result};
     });
 
     std::cout << std::reduce(result.cbegin(), result.cend()) << std::endl;
+}
+
+int main() {
+    std::cout << "checksum: " << rnd() << std::endl;
+    constexpr size_t k_n = 100000000;
+    constexpr int k_divisor_val = 1398269;
+    runBenchmarks(k_n, k_divisor_val);
+
+    size_t n = 0;
+    int divisor_val = 0; // mersenne prime num: 1398269
+    std::cout << "provide divisor: ";
+    std::cin >> n >> divisor_val;
+    runBenchmarks(n, divisor_val);
 }
