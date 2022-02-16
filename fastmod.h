@@ -167,6 +167,12 @@ FASTMOD_API uint64_t fastdiv_u64(uint64_t a, __uint128_t M) {
   return mul128_u64(M, a);
 }
 
+FASTMOD_API int64_t fastmod_s64(int64_t a, __uint128_t M, int64_t positive_d) {
+  __uint128_t lowbits = M * a;
+  int64_t highbits = mul128_u64(lowbits, positive_d); // NOLINT(cppcoreguidelines-narrowing-conversions)
+  return highbits - ((positive_d-1) & (a >> 63));
+}
+
 // End of the 64-bit functions
 
 #endif // #ifndef _MSC_VER
