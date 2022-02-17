@@ -16,8 +16,8 @@ int64_t rnd() {
 }
 
 void runBenchmarksModuloI64(const size_t n, const int divisor_val) {
-    std::vector<int64_t> dividend(n), divisor(n, divisor_val), result(n);
-    std::generate(dividend.begin(), dividend.end(), rnd);
+    std::vector<int64_t> dividend(n), divisor(n, divisor_val), result(n, 0);
+    std::generate(dividend.begin(), dividend.end(), f);
 
     auto eval = [](auto fun) {
         const auto t1 = std::chrono::high_resolution_clock::now();
@@ -47,16 +47,30 @@ void runBenchmarksModuloI64(const size_t n, const int divisor_val) {
         return std::pair{"2[] validate fastmod with regular", result};
     });
 
+    result.assign(n, 0);
     eval([n, &dividend, &result, divisor_val] {
         auto d = dividend.data();
         auto r = result.data();
 
         for (size_t i = 0; i < n; ++i) {
-            *(r++) = (*d) % divisor_val;
+            *(r++) = (*d++) % divisor_val;
         }
         return std::pair{"2[] regular", result};
     });
 
+    result.assign(n, 0);
+    eval([n, &dividend, &result, divisor_val] {
+        auto d = dividend.data();
+        auto r = result.data();
+
+        libdivide::divider<int64_t> divider(divisor_val);
+        for (size_t i = n; i; --i) {
+            *(r++) = *(d++) - (*d / divider) * divisor_val;
+        }
+        return std::pair{"2[] libdivide", result};
+    });
+
+    result.assign(n, 0);
     eval([n, &dividend, &result, divisor_val] {
         auto d = dividend.data();
         auto r = result.data();
