@@ -65,7 +65,8 @@ void runBenchmarksModuloI64(const size_t n, const int divisor_val) {
 
         libdivide::divider<int64_t> divider(divisor_val);
         for (size_t i = n; i; --i) {
-            *(r++) = *(d++) - (*d / divider) * divisor_val;
+            *(r++) = *d - (*d / divider) * divisor_val;
+            ++d;
         }
         return std::pair{"2[] libdivide", result};
     });
