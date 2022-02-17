@@ -1,33 +1,12 @@
 #include <iostream>
-#include <random>
-#include <ctime>
-#include <chrono>
+
 #include "libdivide.h"
 #include "fastmod.h"
-
-int f() {
-    static int i;
-    return ++i;
-}
-
-int64_t rnd() {
-    static std::mt19937 mt_rand(std::time(0));
-    return mt_rand();
-}
+#include "eval.h"
 
 void runBenchmarksModuloI64(const size_t n, const int divisor_val) {
     std::vector<int64_t> dividend(n), divisor(n, divisor_val), result(n, 0);
-    std::generate(dividend.begin(), dividend.end(), f);
-
-    auto eval = [](auto fun) {
-        const auto t1 = std::chrono::high_resolution_clock::now();
-        const auto[name, result] = fun();
-        const auto sum = std::reduce(result.cbegin(), result.cend());
-        const auto t2 = std::chrono::high_resolution_clock::now();
-        const std::chrono::duration<double, std::milli> ms = t2 - t1;
-        std::cout << std::fixed << name << " result "
-                  << sum << " took " << ms.count() << " ms\n";
-    };
+    std::generate(dividend.begin(), dividend.end(), seq);
 
     eval([n, &dividend, &result, divisor_val] {
         auto d = dividend.data();
