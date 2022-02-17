@@ -16,6 +16,15 @@ void runBenchmark(const size_t n) {
         }
         return std::pair{"ADD with cast column", result};
     });
+    std::vector<int64_t> casted(n);
+    eval([n, &left_arg, &right_arg, &casted, &result] {
+        std::copy(left_arg.cbegin(), left_arg.cend(), casted.begin());
+        auto r = result.data(), a = casted.data(), b = right_arg.data();
+        for (size_t i = 0; i < n; ++i) {
+            *(r++) = *(a++) + *(b++);
+        }
+        return std::pair{"ADD with cast column preallocated", result};
+    });
     eval([&left_arg, &right_arg, &result] {
         auto op = [](const std::vector<int32_t> &left, const std::vector<int64_t> &right,
                      std::vector<int64_t> &result) {
@@ -39,6 +48,15 @@ void runBenchmark(const size_t n) {
         }
         return std::pair{"MUL with cast column", result};
     });
+
+    eval([n, &left_arg, &right_arg, &casted, &result] {
+        std::copy(left_arg.cbegin(), left_arg.cend(), casted.begin());
+        auto r = result.data(), a = casted.data(), b = right_arg.data();
+        for (size_t i = 0; i < n; ++i) {
+            *(r++) = *(a++) * (*(b++));
+        }
+        return std::pair{"MUL with cast column preallocated", result};
+    });
     eval([&left_arg, &right_arg, &result] {
         auto op = [](const std::vector<int32_t> &left, const std::vector<int64_t> &right,
                      std::vector<int64_t> &result) {
@@ -61,5 +79,7 @@ int main() {
     size_t n = 0;
     std::cout << "provide divisor: ";
     std::cin >> n;
-    runBenchmark(n);
+    std::cout << std::endl;
+    for (int i = 10; i; i--)
+        runBenchmark(n);
 }
