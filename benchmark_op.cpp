@@ -57,6 +57,18 @@ void runBenchmark(const size_t n) {
         }
         return std::pair{"MUL with cast column preallocated", result};
     });
+    eval([n, &left_arg, &right_arg, &casted, &result] {
+        auto l = left_arg.data();
+        auto c = casted.data();
+        for (size_t i = 0; i < n; ++i) {
+            *(c++) = (int64_t) *(l++);
+        }
+        auto r = result.data(), a = casted.data(), b = right_arg.data();
+        for (size_t i = 0; i < n; ++i) {
+            *(r++) = *(a++) * (*(b++));
+        }
+        return std::pair{"MUL with cast column preallocated with own cast", result};
+    });
     eval([&left_arg, &right_arg, &result] {
         auto op = [](const std::vector<int32_t> &left, const std::vector<int64_t> &right,
                      std::vector<int64_t> &result) {
