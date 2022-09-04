@@ -77,7 +77,7 @@ void runBenchmark(const size_t n) {
             auto b = right.data();
             const auto n = result.size();
             for (size_t i = 0; i < n; ++i) {
-                *(r++) = *(a++) * (*(b++));
+                *(r++) = *(a++) * (*(b++w));
             }
         };
         op(left_arg, right_arg, result);
