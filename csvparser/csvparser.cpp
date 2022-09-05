@@ -2,13 +2,18 @@
 #include <cassert>
 #include <cctype>
 #include <cstdint>
+#include <iostream>
+#include "fast_float/fast_float.h"
 
 class Parser {
   size_t line = 0;
   size_t line_value = 0;
   FILE* file;
+  unsigned char buffer[100];
   unsigned char c;
-  const char separator = ',';
+  const unsigned char separator = ',';
+  const unsigned char decimal_separator = '.';
+
  public:
   Parser(FILE* f) : file(f) {}
 
@@ -41,11 +46,37 @@ class Parser {
     return num;
   }
 
+  float_t ParseFloat() {
+    unsigned char* ptr = buffer;
+    if (c == '-') {
+      (*ptr++) = c;
+      Next();
+    }
+    *ptr = c;
+    size_t i = 0;
+    do {
+      (*++ptr) = fgetc(file);
+      ++i;
+    } while (i < 97 && isdigit(*ptr));
+    if (*ptr == decimal_separator) {
+      // continue
+
+      do {
+        (*++ptr) = fgetc(file);
+        ++i;
+      } while (i < 97 && isdigit(*ptr));
+    }
+    c = *ptr;
+    float num;
+    fast_float::from_chars(reinterpret_cast<const char*>(buffer), reinterpret_cast<const char*>(ptr), num);
+    return num;
+  }
+
   void SkipWhitespaceSparatorWhitespace() {
     while (isspace(c)) Next();
     if (c == separator) {
       ++line_value;
-      while (isspace(c)) Next();
+      do { Next(); } while (isspace(c));
     } else if (c == '\n') {
       ++line;
       line_value = 0;
@@ -88,9 +119,12 @@ int main() {
     }
     printf("%c", c);
   }
-  parser.ParseI32();
+  parser.Next();
+  std::cout << parser.ParseI32() << std::endl;
   parser.SkipWhitespaceSparatorWhitespace();
-  parser.ParseU32();
+  std::cout << parser.ParseU32() << std::endl;
+  parser.SkipWhitespaceSparatorWhitespace();
+  std::cout << parser.ParseFloat() << std::endl;
 
   fclose(fp);
 }
